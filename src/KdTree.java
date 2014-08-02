@@ -1,5 +1,6 @@
 
 import java.util.Iterator;
+import java.util.TreeSet;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -50,28 +51,36 @@ public class KdTree {
             N++;
             return;
         }
-        Node node = root;
+        Node prevRoot = root;
+        Node root = new Node();
+        root = prevRoot;
         int compare = 0;
-        while (node != null) {
-            compare = p.compareTo(node.p);
+        while (root != null) {
+            compare = p.compareTo(root.p);
             if (compare == -1) {
-                node = root.lb;
-                N++;
+                if (root.lb == null) {
+                    break;
+                }
+                root = root.lb;
             } else if (compare == 1) {
-                node = root.rt;
-                N++;
+                if (root.rt == null) {
+                    break;
+                }
+                root = root.rt;
             } else {
+                prevRoot = root;
                 return;
             }
         }
-        node = new Node();
+        N++;
         if (compare == -1) {
-            node.lb = new Node();
-            node.lb.p = p;
+            root.lb = new Node();
+            root.lb.p = p;
         } else {
-            node.rt = new Node();
-            node.rt.p = p;
+            root.rt = new Node();
+            root.rt.p = p;
         }
+        prevRoot = root;
     }
 
     // does the set contain the point p?
@@ -81,7 +90,25 @@ public class KdTree {
 
     // draw all of the points to standard draw
     public void draw() {
+        if (isEmpty()) {
+            return;
+        }
+        Node prevRoot = root;
+        Node root = new Node();
+        root = prevRoot;
+        drawSubtree(root);
+        prevRoot = root;
+    }
 
+    private static void drawSubtree(Node n) {
+        n.p.draw();
+        System.out.println(n.p.toString());
+        if (n.lb != null) {
+            drawSubtree(n.lb);
+        }
+        if (n.rt != null) {
+            drawSubtree(n.rt);
+        }
     }
 
     // all points in the set that are inside the rectangle
@@ -121,16 +148,18 @@ public class KdTree {
         double[] xs = new double[1000];
         double[] ys = new double[1000];
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             xs[i] = StdRandom.uniform();
             ys[i] = StdRandom.uniform();
             kd.insert(new Point2D(xs[i], ys[i]));
         }
         System.out.println(kd.size());
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 2; i++) {
             kd.insert(new Point2D(xs[i], ys[i]));
         }
 
         System.out.println(kd.size());
+
+        kd.draw();
     }
 }
