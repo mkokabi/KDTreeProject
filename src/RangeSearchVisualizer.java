@@ -42,7 +42,8 @@ public class RangeSearchVisualizer {
         StdDraw.clear();
         StdDraw.setPenColor(StdDraw.BLACK);
         StdDraw.setPenRadius(.01);
-        brute.draw();
+        //brute.draw();
+        kdtree.draw();
 
         while (true) {
             StdDraw.show(40);
