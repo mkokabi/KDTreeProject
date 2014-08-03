@@ -46,14 +46,13 @@ public class KdTree {
 
     static boolean USE_X = true;
     static boolean USE_Y = false;
-    private boolean useXorY;
-
+ 
     // add the point p to the set (if it is not already in the set)
     public void insert(Point2D p) {
         if (isEmpty()) {
             root = new Node();
             root.p = p;
-            root.rect = new RectHV(p.x(), 0, p.x(), 1);
+            root.rect = new RectHV(0, 0, 1, 1);
             N++;
             return;
         }
@@ -61,7 +60,7 @@ public class KdTree {
         Node node = new Node();
         node = prevRoot;
         int compare = 0;
-        useXorY = USE_X;
+        boolean useXorY = USE_X;
         while (node != null) {
             if (useXorY == USE_X) {
                 compare = Double.compare(p.x(), node.p.x());
@@ -93,17 +92,21 @@ public class KdTree {
             node.lb = new Node();
             node.lb.p = p;
             if (useXorY == USE_X) {
-                node.lb.rect = new RectHV(p.x(), 0, p.x(), node.rect.ymin());
+                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(), 
+                        node.rect.xmax(), node.p.y());
             } else {
-                node.lb.rect = new RectHV(0, p.y(), node.rect.xmin(), p.y());
+                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(), 
+                        node.p.x(), node.rect.ymax());
             }
         } else {
             node.rt = new Node();
             node.rt.p = p;
             if (useXorY == USE_X) {
-                node.rt.rect = new RectHV(p.x(), node.rect.ymax(), p.x(), 1);
+                node.rt.rect = new RectHV(node.rect.xmin(), node.p.y(), 
+                        node.rect.xmax(), node.rect.ymax());
             } else {
-                node.rt.rect = new RectHV(node.rect.xmax(), p.y(), 1, p.y());
+                node.rt.rect = new RectHV(node.p.x(), node.rect.ymin(), 
+                        node.rect.xmax(), node.rect.ymax());
             }
         }
         prevRoot = node;
@@ -116,7 +119,7 @@ public class KdTree {
         node = prevRoot;
         int compare = 0;
         boolean found = false;
-        useXorY = USE_X;
+        boolean useXorY = USE_X;
         while (node != null) {
             if (useXorY == USE_X) {
                 compare = Double.compare(p.x(), node.p.x());
@@ -138,6 +141,7 @@ public class KdTree {
                 found = true;
                 break;
             }
+            useXorY = !useXorY;
         }
         prevRoot = node;
         return found;
@@ -148,39 +152,64 @@ public class KdTree {
         if (isEmpty()) {
             return;
         }
+        boolean useXorY = USE_X;
         Node prevRoot = root;
         Node node = new Node();
         node = prevRoot;
-        drawSubtree(node);
+        drawSubtree(node, useXorY);
         prevRoot = node;
     }
 
-    private static void drawSubtree(Node n) {
-        if (n.rect.width() == 0) {
-            StdDraw.setPenColor(Color.RED);
-        } else {
-            StdDraw.setPenColor(Color.BLUE);
-        }
-        StdDraw.line(n.rect.xmin(), n.rect.ymin(), n.rect.xmax(), n.rect.ymax());
-        //n.p.draw();
-        //System.out.println(n.p.toString());
+    private static void drawSubtree(Node n, boolean useXorY) {
+        StdDraw.setPenColor(Color.BLACK);
+        StdDraw.setPenRadius(.01);
+        n.rect.draw();
         if (n.lb != null) {
-            drawSubtree(n.lb);
+            drawSubtree(n.lb, !useXorY);
         }
         if (n.rt != null) {
-            drawSubtree(n.rt);
+            drawSubtree(n.rt, !useXorY);
         }
+        StdDraw.setPenRadius(.01);
+        if (useXorY == USE_X) {
+            StdDraw.setPenColor(Color.RED);
+            StdDraw.line(n.p.x(), n.rect.ymin(), n.p.x(), n.rect.ymax());
+        } else {
+            StdDraw.setPenColor(Color.BLUE);
+            StdDraw.line(n.rect.xmin(), n.p.y(), n.rect.xmax(), n.p.y());
+        }
+        StdDraw.setPenColor(Color.BLACK);
+        StdDraw.setPenRadius(.02);
+        n.p.draw();
+        //System.out.println(n.p.toString());
     }
 
     // all points in the set that are inside the rectangle
-    public Iterable<Point2D> range(RectHV rect) {
+    public Iterable<Point2D> range(RectHV r) {
+        final RectHV rect = r;
+        final Queue<Point2D> inRangePoints = new Queue<>();
         return new Iterable<Point2D>() {
 
             @Override
             public Iterator<Point2D> iterator() {
-                Queue<Point2D> inRangePoints = new Queue<>();
-
+                Node prevRoot = root;
+                Node node = new Node();
+                node = prevRoot;
+                CheckSubtree(node.lb);
+                CheckSubtree(node.rt);
+                prevRoot = node;
                 return inRangePoints.iterator();
+            }
+
+            private void CheckSubtree(Node n) {
+                if (n == null || !n.rect.intersects(rect)) {
+                    return;
+                }
+                if (rect.contains(n.p)) {
+                    inRangePoints.enqueue(n.p);
+                }
+                CheckSubtree(n.lb);
+                CheckSubtree(n.rt);
             }
         };
     }
@@ -203,6 +232,14 @@ public class KdTree {
         kd.insert(new Point2D(0.4, 0.7));
         kd.insert(new Point2D(0.9, 0.6));
         kd.draw();
+        System.out.println(kd.contains(new Point2D(0.4, 0.7)));
+        //final RectHV rectHV = new RectHV(0.45, 0.35, 0.55, 0.45);
+        final RectHV rectHV = new RectHV(0.15, 0.25, 0.55, 0.45);
+        StdDraw.setPenColor(Color.GREEN);
+        rectHV.draw();
+        for (Point2D p : kd.range(rectHV)) {
+            System.out.println(p.toString());
+        }
     }
 
     private static void test1() {
