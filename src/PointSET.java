@@ -58,8 +58,7 @@ public class PointSET {
             public Iterator<Point2D> iterator() {
                 Queue<Point2D> inRangePoints = new Queue<>();
                 for (Point2D point : points) {
-                    if (point.x() > r.xmin() && point.x() < r.xmax()
-                            && point.y() > r.ymin() && point.y() < r.ymax()) {
+                    if (r.contains(point)) {
                         inRangePoints.enqueue(point);
                     }
                 }

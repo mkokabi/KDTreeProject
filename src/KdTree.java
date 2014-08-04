@@ -44,9 +44,9 @@ public class KdTree {
         return N;
     }
 
-    static boolean USE_X = true;
-    static boolean USE_Y = false;
- 
+    private static boolean USE_X = true;
+
+
     // add the point p to the set (if it is not already in the set)
     public void insert(Point2D p) {
         if (isEmpty()) {
@@ -57,7 +57,7 @@ public class KdTree {
             return;
         }
         Node prevRoot = root;
-        Node node = new Node();
+        Node node;
         node = prevRoot;
         int compare = 0;
         boolean useXorY = USE_X;
@@ -72,17 +72,23 @@ public class KdTree {
                     break;
                 }
                 node = node.lb;
-            } else if (compare == 1) {
+            } else {
+                if (compare == 0) {
+                    if (useXorY == USE_X) {
+                        if (p.y() == node.p.y()) {
+                            return;
+                        }
+                    } else {
+                        if (p.x() == node.p.x()) {
+                            return;
+                        }
+                    }
+                }
                 if (node.rt == null) {
                     break;
                 }
                 node = node.rt;
-            } else {
-                prevRoot = node;
-                return;
-            }
-            //System.out.println(p.toString());
-            //System.out.println(useXorY);
+            } 
             useXorY = !useXorY;
         }
         N++;
@@ -90,22 +96,22 @@ public class KdTree {
         useXorY = !useXorY;
         if (compare == -1) {
             node.lb = new Node();
-            node.lb.p = p;
+            node.lb.p = new Point2D(p.x(), p.y());
             if (useXorY == USE_X) {
-                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(), 
+                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(),
                         node.rect.xmax(), node.p.y());
             } else {
-                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(), 
+                node.lb.rect = new RectHV(node.rect.xmin(), node.rect.ymin(),
                         node.p.x(), node.rect.ymax());
             }
         } else {
             node.rt = new Node();
-            node.rt.p = p;
+            node.rt.p = new Point2D(p.x(), p.y());
             if (useXorY == USE_X) {
-                node.rt.rect = new RectHV(node.rect.xmin(), node.p.y(), 
+                node.rt.rect = new RectHV(node.rect.xmin(), node.p.y(),
                         node.rect.xmax(), node.rect.ymax());
             } else {
-                node.rt.rect = new RectHV(node.p.x(), node.rect.ymin(), 
+                node.rt.rect = new RectHV(node.p.x(), node.rect.ymin(),
                         node.rect.xmax(), node.rect.ymax());
             }
         }
@@ -115,7 +121,7 @@ public class KdTree {
     // does the set contain the point p?
     public boolean contains(Point2D p) {
         Node prevRoot = root;
-        Node node = new Node();
+        Node node; 
         node = prevRoot;
         int compare = 0;
         boolean found = false;
@@ -154,7 +160,7 @@ public class KdTree {
         }
         boolean useXorY = USE_X;
         Node prevRoot = root;
-        Node node = new Node();
+        Node node; 
         node = prevRoot;
         drawSubtree(node, useXorY);
         prevRoot = node;
@@ -193,8 +199,11 @@ public class KdTree {
             @Override
             public Iterator<Point2D> iterator() {
                 Node prevRoot = root;
-                Node node = new Node();
+                Node node;
                 node = prevRoot;
+                if (node.rect.contains(node.p)) {
+                    inRangePoints.enqueue(node.p);
+                }
                 CheckSubtree(node.lb);
                 CheckSubtree(node.rt);
                 prevRoot = node;
@@ -214,14 +223,116 @@ public class KdTree {
         };
     }
 
+    private Point2D closest;
+
     // a nearest neighbor in the set to p; null if set is empty
     public Point2D nearest(Point2D p) {
-        return new Point2D(0.0, 0.0);
+        Node prevRoot = root;
+        Node node;
+        node = prevRoot;
+        closest = node.p;
+        SearchSubtree(p, node.lb);
+        SearchSubtree(p, node.rt);
+        prevRoot = node;
+        return closest;
+    }
+
+    private void SearchSubtree(Point2D qp, Node n) {
+        if (n == null || n.rect.distanceSquaredTo(closest) < n.rect.distanceSquaredTo(qp)) {
+            return;
+        } else {
+            if (qp.distanceSquaredTo(closest) > qp.distanceSquaredTo(n.p)) {
+                closest = n.p;
+            }
+            SearchSubtree(qp, n.lb);
+            SearchSubtree(qp, n.rt);
+        }
     }
 
     public static void main(String[] args) {
         //test1();
-        test2();
+        //test2();
+        //test4();
+        //test5();
+        test6();
+    }
+
+    private static void test6() {
+        KdTree kd = new KdTree();
+        kd.insert(new Point2D(0.5, 0.1));
+        kd.insert(new Point2D(0.9, 0.5));
+        kd.insert(new Point2D(0.5, 0.9));
+        kd.insert(new Point2D(0.1, 0.5));
+        kd.draw();
+        System.out.println(kd.size());
+    }
+
+    private static void test5() {
+        KdTree kd = new KdTree();
+        double[] xs = new double[10000];
+        double[] ys = new double[10000];
+        int Nx = 10;
+        int Ny = 10;
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                final Point2D p = new Point2D(i / 10.0, j / 10.0);
+                System.out.println(p.toString());
+                kd.insert(p);
+                p.draw();
+            }
+        }
+        kd.draw();
+        Iterable<Point2D> range = kd.range(new RectHV(
+                0.0, 0.0, 0.4, 0.4));
+        for (Point2D p : range) {
+            System.out.println(p.toString());
+        }
+        System.out.println("-------- nearest to 0.0, 0.0");
+        Point2D p = kd.nearest(new Point2D(0.0, 0.0));
+        System.out.println(p.toString());
+        System.out.println("-------- nearest to 0.01, 0.01");
+        p = kd.nearest(new Point2D(0.01, 0.01));
+        System.out.println(p.toString());
+        System.out.println("-------- nearest to 0.9, 0.9");
+        p = kd.nearest(new Point2D(0.9, 0.9));
+        System.out.println(p.toString());
+        System.out.println("-------- nearest to 0.9, 0.0");
+        p = kd.nearest(new Point2D(0.9, 0.0));
+        System.out.println(p.toString());
+    }
+
+    private static void test4() {
+        KdTree kd = new KdTree();
+        double[] xs = new double[10000];
+        double[] ys = new double[10000];
+
+        int N = 10000;
+        for (int i = 0; i < N; i++) {
+            xs[i] = StdRandom.uniform(N) / (N * 1.0);
+            ys[i] = StdRandom.uniform(N) / (N * 1.0);
+            kd.insert(new Point2D(xs[i], ys[i]));
+        }
+        for (int i = 0; i < N; i++) {
+            System.out.format("-----%d %f,%f\n", i, xs[i], ys[i]);
+            Iterable<Point2D> range = kd.range(new RectHV(
+                    xs[i] - 0.0001, ys[i] - 0.0001,
+                    xs[i] + 0.0001, ys[i] + 0.0001));
+            int x = 0;
+            for (Point2D p : range) {
+                x++;
+            }
+            if (x > 1) {
+                System.out.println(x);
+                System.out.format("%f,%f,%f,%f\n",
+                        xs[i] - 0.001, ys[i] - 0.001,
+                        xs[i] + 0.001, ys[i] + 0.001);
+                for (Point2D p : range) {
+                    System.out.println(p.toString());
+                }
+            }
+        }
+
+        System.out.println(kd.size());
     }
 
     private static void test2() {
@@ -242,18 +353,59 @@ public class KdTree {
         }
     }
 
+    private static void swap(double[] ds, int x, int y) {
+        double tmp = ds[x];
+        ds[x] = ds[y];
+        ds[y] = tmp;
+    }
+
     private static void test1() {
+        int N = 10000;
+        double[] xs = new double[N];
+        double[] ys = new double[N];
+
+        for (int i = 0; i < N; i++) {
+            xs[i] = i / (N * 1.0);
+            ys[i] = i / (N * 1.0);
+        }
+        for (int i = 0; i < N; i++) {
+            int uniform = StdRandom.uniform(0, N);
+            swap(xs, i, uniform);
+            uniform = StdRandom.uniform(0, N);
+            swap(ys, i, uniform);
+        }
+        for (int j = 0; j < 10000; j++) {
+            KdTree kd = new KdTree();
+            final int size = j + 1;
+            for (int i = 0; i < size; i++) {
+                kd.insert(new Point2D(xs[i], ys[i]));
+            }
+//            System.out.println(size);
+//            System.out.println(kd.size());
+            if (size != kd.size()) {
+                System.out.println("***");
+            }
+        }
+//        for (int i = 0; i < 2000; i++) {
+//            kd.insert(new Point2D(xs[i], ys[i]));
+//        }
+//
+//        System.out.println(kd.size());
+        //kd.draw();
+    }
+
+    private static void test3() {
         KdTree kd = new KdTree();
         double[] xs = new double[10000];
         double[] ys = new double[10000];
 
-        for (int i = 0; i < 100; i++) {
-            xs[i] = StdRandom.uniform();
-            ys[i] = StdRandom.uniform();
+        for (int i = 0; i < 1000; i++) {
+            xs[i] = StdRandom.uniform(100000) / 100000.0;
+            ys[i] = StdRandom.uniform(100000) / 100000.0;
             kd.insert(new Point2D(xs[i], ys[i]));
         }
         System.out.println(kd.size());
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 200; i++) {
             kd.insert(new Point2D(xs[i], ys[i]));
         }
 
