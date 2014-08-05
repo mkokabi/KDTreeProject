@@ -46,7 +46,6 @@ public class KdTree {
 
     private static boolean USE_X = true;
 
-
     // add the point p to the set (if it is not already in the set)
     public void insert(Point2D p) {
         if (isEmpty()) {
@@ -88,7 +87,7 @@ public class KdTree {
                     break;
                 }
                 node = node.rt;
-            } 
+            }
             useXorY = !useXorY;
         }
         N++;
@@ -121,7 +120,7 @@ public class KdTree {
     // does the set contain the point p?
     public boolean contains(Point2D p) {
         Node prevRoot = root;
-        Node node; 
+        Node node;
         node = prevRoot;
         int compare = 0;
         boolean found = false;
@@ -160,7 +159,7 @@ public class KdTree {
         }
         boolean useXorY = USE_X;
         Node prevRoot = root;
-        Node node; 
+        Node node;
         node = prevRoot;
         drawSubtree(node, useXorY);
         prevRoot = node;
@@ -201,7 +200,7 @@ public class KdTree {
                 Node prevRoot = root;
                 Node node;
                 node = prevRoot;
-                if (node.rect.contains(node.p)) {
+                if (rect.contains(node.p)) {
                     inRangePoints.enqueue(node.p);
                 }
                 CheckSubtree(node.lb);
@@ -265,6 +264,29 @@ public class KdTree {
         kd.insert(new Point2D(0.1, 0.5));
         kd.draw();
         System.out.println(kd.size());
+        System.out.println(kd.contains(new Point2D(0.5, 0.1)));
+        System.out.println(kd.contains(new Point2D(0.9, 0.5)));
+        System.out.println(kd.contains(new Point2D(0.5, 0.9)));
+        System.out.println(kd.contains(new Point2D(0.1, 0.5)));
+        for (Point2D p : kd.range(new RectHV(0.0, 0.0, 1.0, 1.0))) {
+            System.out.println(p.toString());
+        }
+        System.out.println("------");
+        for (Point2D p : kd.range(new RectHV(0.0, 0.0, 0.5, 0.1))) {
+            System.out.println(p.toString());
+        }
+        System.out.println("------");
+        for (Point2D p : kd.range(new RectHV(0.5, 0.1, 0.5, 0.9))) {
+            System.out.println(p.toString());
+        }
+        System.out.println("------");
+        for (Point2D p : kd.range(new RectHV(0.5, 0.5, 1.0, 1.0))) {
+            System.out.println(p.toString());
+        }
+        System.out.println("------");
+        for (Point2D p : kd.range(new RectHV(0.1, 0.5, 1.0, 1.0))) {
+            System.out.println(p.toString());
+        }
     }
 
     private static void test5() {
