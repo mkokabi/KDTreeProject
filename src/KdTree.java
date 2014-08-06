@@ -74,11 +74,11 @@ public class KdTree {
             } else {
                 if (compare == 0) {
                     if (useXorY == USE_X) {
-                        if (p.y() == node.p.y()) {
+                        if (Double.compare(p.y(), node.p.y()) == 0) {
                             return;
                         }
                     } else {
-                        if (p.x() == node.p.x()) {
+                        if (Double.compare(p.x(), node.p.x()) == 0) {
                             return;
                         }
                     }
@@ -114,7 +114,6 @@ public class KdTree {
                         node.rect.xmax(), node.rect.ymax());
             }
         }
-        prevRoot = node;
     }
 
     // does the set contain the point p?
@@ -148,7 +147,6 @@ public class KdTree {
             }
             useXorY = !useXorY;
         }
-        prevRoot = node;
         return found;
     }
 
@@ -162,7 +160,6 @@ public class KdTree {
         Node node;
         node = prevRoot;
         drawSubtree(node, useXorY);
-        prevRoot = node;
     }
 
     private static void drawSubtree(Node n, boolean useXorY) {
@@ -205,7 +202,7 @@ public class KdTree {
                 }
                 CheckSubtree(node.lb);
                 CheckSubtree(node.rt);
-                prevRoot = node;
+                //prevRoot = node;
                 return inRangePoints.iterator();
             }
 
@@ -232,7 +229,6 @@ public class KdTree {
         closest = node.p;
         SearchSubtree(p, node.lb);
         SearchSubtree(p, node.rt);
-        prevRoot = node;
         return closest;
     }
 
@@ -253,9 +249,31 @@ public class KdTree {
         //test2();
         //test4();
         //test5();
-        test6();
+        //test6();
+        test7();
     }
 
+    private static void test7() {
+        KdTree kd = new KdTree();
+        PointSET ps = new PointSET();
+        int N = 100000;
+        for (int i = 0; i < N; i++) {
+            double x = StdRandom.uniform(0, N) / (N * 1.0);
+            double y = StdRandom.uniform(0, N) / (N * 1.0);
+            ps.insert(new Point2D(x, y));
+            kd.insert(new Point2D(x, y));
+        }
+        System.out.println("Tesing");
+        for (int i = 0; i < N; i++) {
+            double x = StdRandom.uniform(0, N) / (N * 1.0);
+            double y = StdRandom.uniform(0, N) / (N * 1.0);
+            if (ps.contains(new Point2D(x, y)) && 
+                    ! ps.contains(new Point2D(x, y))) {
+                System.out.format("****%f, %f", x, y);
+            }
+        }        
+    }
+    
     private static void test6() {
         KdTree kd = new KdTree();
         kd.insert(new Point2D(0.5, 0.1));
@@ -291,7 +309,6 @@ public class KdTree {
 
     private static void test5() {
         KdTree kd = new KdTree();
-        double[] xs = new double[10000];
         double[] ys = new double[10000];
         int Nx = 10;
         int Ny = 10;
