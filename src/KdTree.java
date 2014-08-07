@@ -226,30 +226,33 @@ public class KdTree {
     }
 
     private Point2D closest;
+    private double distOfClosestToqp;
 
     // a nearest neighbor in the set to p; null if set is empty
-    public Point2D nearest(Point2D p) {
+    public Point2D nearest(Point2D qp) {
         Node prevRoot = root;
         Node node;
         node = prevRoot;
         closest = node.p;
-        int closestCompareToP = Double.compare(closest.x(), p.x());
+        distOfClosestToqp = closest.distanceSquaredTo(qp);
+        int closestCompareToP = Double.compare(closest.x(), qp.x());
         if (closestCompareToP == 1) {
-            SearchSubtree(p, node.lb);
-            SearchSubtree(p, node.rt);
+            SearchSubtree(qp, node.lb);
+            SearchSubtree(qp, node.rt);
         } else { //if (closestCompareToP == -1) {
-            SearchSubtree(p, node.rt);
-            SearchSubtree(p, node.lb);
+            SearchSubtree(qp, node.rt);
+            SearchSubtree(qp, node.lb);
         }
         return closest;
     }
 
     private void SearchSubtree(Point2D qp, Node n) {
-        if (n == null) { // || n.rect.distanceSquaredTo(closest) < n.rect.distanceSquaredTo(qp)) {
+        if ((n == null) || (distOfClosestToqp < n.rect.distanceSquaredTo(qp))) {
             return;
         } else {
-            if (qp.distanceSquaredTo(closest) > qp.distanceSquaredTo(n.p)) {
+            if (qp.distanceSquaredTo(n.p) <= distOfClosestToqp) {
                 closest = n.p;
+                distOfClosestToqp = closest.distanceSquaredTo(qp);
             }
             int closestCompareToP = 0;
             if (n.UseX) {
